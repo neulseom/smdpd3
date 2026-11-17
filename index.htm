@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>황금돼지 | 저금통 강화 시뮬레이터</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Malgun Gothic', sans-serif;
+  background: #fff8e8;
+  color: #40301c;
+}
+header {
+  text-align: center;
+  padding: 28px 15px;
+  background: linear-gradient(135deg,#f6b800,#ffe58a);
+}
+header h1 { margin: 0 0 8px; font-size: 30px; }
+header p { margin: 0; font-size: 14px; }
+main { max-width: 920px; margin: 24px auto; padding: 0 15px; }
+.panel {
+  background: white;
+  border: 2px solid #f5dc92;
+  border-radius: 22px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px #a8791614;
+}
+h2 { margin-top: 0; font-size: 21px; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 12px;
+}
+.stat {
+  background: #fff5d8;
+  border-radius: 14px;
+  padding: 17px 8px;
+  text-align: center;
+}
+.stat span { display: block; font-size: 13px; color: #80652e; }
+.stat strong { display: block; margin-top: 7px; font-size: 21px; }
+.pig-area {
+  text-align: center;
+  background: radial-gradient(circle,#fff4b3,#fff 75%);
+  padding: 25px 10px;
+  border-radius: 20px;
+}
+.pig {
+  position: relative;
+  display: inline-block;
+  font-size: 125px;
+  line-height: 1.4;
+  transition: transform .35s,filter .35s;
+  filter: drop-shadow(0 10px 7px #b88c3b55);
+}
+.pig.shake { animation: shake .5s; }
+.pig.success { animation: pop .7s; }
+@keyframes shake {
+  0%,100% { transform: rotate(0); }
+  20%,60% { transform: rotate(-12deg); }
+  40%,80% { transform: rotate(12deg); }
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.35) rotate(8deg); }
+  100% { transform: scale(1); }
+}
+.crown {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 48px;
+}
+.sparkles { font-size: 30px; min-height: 40px; }
+.level {
+  font-size: 25px;
+  font-weight: 900;
+  color: #bc8200;
+}
+.bar {
+  background: #f1e7cc;
+  height: 14px;
+  border-radius: 30px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+.fill {
+  height: 100%;
+  background: linear-gradient(90deg,#f4ae00,#ffe066);
+  width: 0%;
+  transition: width .4s;
+}
+input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #e7d6a6;
+  border-radius: 12px;
+  font-size: 17px;
+  margin: 8px 0;
+}
+button {
+  border: none;
+  padding: 15px 18px;
+  border-radius: 13px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform .15s;
+}
+button:active { transform: scale(.96); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.primary {
+  background: linear-gradient(135deg,#f6b900,#e89a00);
+  color: #382400;
+  width: 100%;
+}
+.upgrade {
+  background: linear-gradient(135deg,#f8cf33,#f59c00);
+  color: #392200;
+  width: 100%;
+  font-size: 22px;
+  padding: 20px;
+}
+.secondary { background: #f2e9d4; color: #493819; }
+.danger { background: #fff0ed; color: #b23b26; }
+.buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.buttons button { flex: 1; }
+.message {
+  min-height: 28px;
+  margin-top: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+.success-text { color: #b37b00; }
+.fail-text { color: #bb493b; }
+.history {
+  list-style: none;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #eee2c7;
+  font-size: 14px;
+}
+small { color: #806b45; }
+.note { font-size: 12px; color: #79694b; line-height: 1.7; }
+footer { text-align: center; padding: 20px; color: #806b45; }
+@media(max-width:500px) {
+  header h1 { font-size: 25px; }
+  .panel { padding: 18px; }
+  .pig { font-size: 100px; }
+  .stat strong { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐷 황금돼지</h1>
+  <p>저축하고, 강화하고, 전설의 황금돼지를 키워라!</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>💰 나의 저금통</h2>
+    <div class="stats">
+      <div class="stat"><span>총 저축액</span><strong id="balance">0원</strong></div>
+      <div class="stat"><span>강화권</span><strong id="tickets">0장</strong></div>
+      <div class="stat"><span>연 이자율</span><strong id="rate">1%</strong></div>
+      <div class="stat"><span>1년 예상 이자</span><strong id="interest">0원</strong></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="pig-area">
+      <div class="level" id="level">+0 평범한 돼지</div>
+      <div class="pig" id="pig">
+        <span id="crown"></span>
+        <span id="pigFace">🐷</span>
+      </div>
+      <div class="sparkles" id="sparkles"></div>
+      <h2 id="pigName">아기 저금통</h2>
+      <p id="nextLevel">강화해서 황금돼지를 성장시키세요!</p>
+    </div>
+    <p>강화 성공 확률: <strong id="chance">90%</strong></p>
+    <div class="bar"><div class="fill" id="chanceBar"></div></div>
+    <button class="upgrade" id="upgradeBtn" onclick="upgrade()">⚒️ 저금통 강화하기</button>
+    <div class="message" id="upgradeMessage" aria-live="polite"></div>
+  </section>
+
+  <section class="panel">
+    <h2>🏦 저축하기</h2>
+    <p>5,000원을 저축할 때마다 강화권 1장을 얻어요!</p>
+    <label for="amount">저축할 금액 (원)</label>
+    <input id="amount" type="number" min="1" step="1" placeholder="예: 5000">
+    <button class="primary" onclick="deposit()">💸 저축하고 강화권 받기</button>
+    <div class="message" id="depositMessage" aria-live="polite"></div>
+  </section>
+
+  <section class="panel">
+    <h2>🎯 강화 확률 안내</h2>
+    <div id="probabilityInfo"></div>
+    <p class="note">강화에 실패해도 레벨과 저축액은 줄어들지 않아요. 강화권만 1장 소모됩니다.</p>
+  </section>
+
+  <section class="panel">
+    <h2>📜 저축 및 강화 기록</h2>
+    <ul class="history" id="history"></ul>
+    <div class="buttons">
+      <button class="secondary" onclick="withdraw()">저축액 출금하기</button>
+      <button class="danger" onclick="resetGame()">처음부터 시작</button>
+    </div>
+  </section>
+
+  <p class="note">※ 실제 은행 서비스가 아닌 교육용 시뮬레이터입니다. 이자는 가상으로 계산되며 실제 돈이나 수익이 발생하지 않습니다. 데이터는 현재 브라우저에 저장됩니다.</p>
+</main>
+
+<footer>🐽 황금돼지 | AI 해커톤 프로젝트</footer>
+
+<script>
+const KEY = "goldenPigSimulatorV1";
+const MAX_LEVEL = 10;
+const chances = [90,85,75,65,55,45,35,25,15,5];
+const rates = [1,2,4,7,11,16,23,32,45,65,100];
+
+function initialState() {
+  return {
+    balance: 0,
+    tickets: 0,
+    level: 0,
+    depositTotal: 0,
+    history: []
+  };
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    if (!saved ||
+        !Number.isSafeInteger(saved.balance) || saved.balance < 0 ||
+        !Number.isSafeInteger(saved.tickets) || saved.tickets < 0 ||
+        !Number.isSafeInteger(saved.level) ||
+        saved.level < 0 || saved.level > MAX_LEVEL ||
+        !Number.isSafeInteger(saved.depositTotal) ||
+        saved.depositTotal < 0 ||
+        !Array.isArray(saved.history)) {
+      return initialState();
+    }
+    return saved;
+  } catch {
+    return initialState();
+  }
+}
+let state = loadState();
+let busy = false;
+
+const $ = id => document.getElementById(id);
+const money = n => Math.floor(n).toLocaleString("ko-KR") + "원";
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    showMessage("depositMessage", "브라우저 저장 공간을 확인해 주세요.", false);
+  }
+}
+
+function showMessage(id, text, success = true) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "message " + (success ? "success-text" : "fail-text");
+}
+
+function addHistory(text) {
+  state.history.unshift({
+    text: text,
+    date: new Date().toLocaleString("ko-KR")
+  });
+  state.history = state.history.slice(0, 50);
+}
+
+function pigAppearance(level) {
+  if (level === 0) return ["🐷","아기 저금통","",""];
+  if (level <= 2) return ["🐖","성장하는 돼지","","✨"];
+  if (level <= 4) return ["🐷","반짝이는 돼지","","✨✨"];
+  if (level <= 6) return ["🐽","황금돼지","","🌟✨🌟"];
+  if (level <= 8) return ["🐷","왕실 황금돼지","👑","💎✨💎"];
+  if (level === 9) return ["🐷","전설의 황금돼지","👑","🌟💎🌟"];
+  return ["🐷","신화의 황금돼지","👑","🌈💎🌈"];
+}
+
+function render() {
+  const level = state.level;
+  const rate = rates[level];
+  const chance = level < MAX_LEVEL ? chances[level] : 0;
+
+  $("balance").textContent = money(state.balance);
+  $("tickets").textContent = state.tickets.toLocaleString() + "장";
+  $("rate").textContent = rate + "%";
+  $("interest").textContent = money(state.balance * rate / 100);
+  $("level").textContent = "+" + level + " 강화";
+  $("chance").textContent = level === MAX_LEVEL ? "최고 레벨" : chance + "%";
+  $("chanceBar").style.width = chance + "%";
+
+  const [face,name,crown,sparkles] = pigAppearance(level);
+  $("pigFace").textContent = face;
+  $("pigName").textContent = name;
+  $("crown").textContent = crown;
+  $("sparkles").textContent = sparkles;
+
+  const golden = level >= 5;
+  $("pig").style.filter = golden
+    ? "sepia(1) saturate(4) hue-rotate(345deg) drop-shadow(0 0 18px gold)"
+    : "drop-shadow(0 10px 7px #b88c3b55)";
+
+  $("nextLevel").textContent = level === MAX_LEVEL
+    ? "🏆 축하합니다! 최고 레벨 달성!"
+    : "다음 강화 성공 시 연 이자율 " + rates[level+1] + "%!";
+
+  $("upgradeBtn").disabled = busy || state.tickets < 1 || level === MAX_LEVEL;
+  $("upgradeBtn").textContent = level === MAX_LEVEL
+    ? "🏆 최고 레벨 달성!"
+    : "⚒️ 강화권 1장 사용하여 강화!";
+
+  $("probabilityInfo").textContent =
+    level === MAX_LEVEL
+    ? "모든 강화를 완료했어요!"
+    : "+" + level + " → +" + (level+1) +
+      " 성공 확률 " + chance + "% / 실패 확률 " + (100-chance) + "%";
+
+  const list = $("history");
+  list.replaceChildren();
+  if (state.history.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "아직 기록이 없습니다.";
+    list.appendChild(li);
+  } else {
+    state.history.forEach(item => {
+      const li = document.createElement("li");
+      const text = document.createElement("span");
+      const date = document.createElement("small");
+      text.textContent = item.text;
+      date.textContent = item.date;
+      li.append(text,date);
+      list.appendChild(li);
+    });
+  }
+}
+
+function deposit() {
+  if (busy) return;
+  const raw = $("amount").value.trim();
+  const amount = Number(raw);
+  if (!raw || !Number.isSafeInteger(amount) || amount <= 0) {
+    showMessage("depositMessage","1원 이상의 올바른 정수 금액을 입력하세요.",false);
+    return;
+  }
+  if (!Number.isSafeInteger(state.balance + amount) ||
+      !Number.isSafeInteger(state.depositTotal + amount)) {
+    showMessage("depositMessage","저축 가능한 금액 범위를 초과했습니다.",false);
+    return;
+  }
+  const oldTickets = Math.floor(state.depositTotal / 5000);
+  const newTotal = state.depositTotal + amount;
+  const earned = Math.floor(newTotal / 5000) - oldTickets;
+
+  if (!Number.isSafeInteger(state.tickets + earned)) {
+    showMessage("depositMessage","강화권 수량이 너무 많습니다.",false);
+    return;
+  }
+
+  state.balance += amount;
+  state.depositTotal = newTotal;
+  state.tickets += earned;
+
+  addHistory("💰 " + money(amount) + " 저축 / 강화권 +" + earned);
+  save();
+  render();
+  $("amount").value = "";
+  showMessage("depositMessage",
+    money(amount) + " 저축 완료! 강화권 " + earned + "장 획득 🎟️");
+}
+
+function upgrade() {
+  if (busy || state.tickets < 1 || state.level >= MAX_LEVEL) return;
+
+  busy = true;
+  state.tickets--;
+  const before = state.level;
+  const success = Math.random() * 100 < chances[before];
+
+  const pig = $("pig");
+  pig.classList.remove("shake","success");
+  void pig.offsetWidth;
+  pig.classList.add("shake");
+  $("upgradeBtn").disabled = true;
+  showMessage("upgradeMessage","⚒️ 강화 중... 결과를 기다려 주세요!");
+
+  setTimeout(() => {
+    if (success) {
+      state.level++;
+      pig.classList.remove("shake");
+      void pig.offsetWidth;
+      pig.classList.add("success");
+      addHistory("🎉 강화 성공! +" + before + " → +" + state.level);
+      showMessage("upgradeMessage",
+        "🎉 강화 성공! +" + state.level +
+        " 달성! 이자율 " + rates[state.level] + "%!");
+    } else {
+      addHistory("💥 강화 실패! +" + before + " 유지");
+      showMessage("upgradeMessage",
+        "💥 강화 실패! 레벨은 유지됩니다. 다시 도전!",false);
+    }
+    busy = false;
+    save();
+    render();
+  }, 700);
+}
+
+function withdraw() {
+  if (busy) return;
+  if (state.balance <= 0) {
+    alert("출금할 저축액이 없습니다.");
+    return;
+  }
+  const input = prompt("출금할 금액을 입력하세요.\n현재 잔액: " + money(state.balance));
+  if (input === null) return;
+  const amount = Number(input.trim());
+  if (!input.trim() || !Number.isSafeInteger(amount) ||
+      amount <= 0 || amount > state.balance) {
+    alert("잔액 이하의 올바른 출금 금액을 입력하세요.");
+    return;
+  }
+  state.balance -= amount;
+  addHistory("💸 " + money(amount) + " 출금");
+  save();
+  render();
+  alert(money(amount) + " 출금 완료!");
+}
+
+function resetGame() {
+  if (busy) return;
+  if (!confirm("저축액, 강화 단계, 기록을 모두 초기화할까요?")) return;
+  state = initialState();
+  save();
+  render();
+  $("amount").value = "";
+  $("upgradeMessage").textContent = "";
+  $("depositMessage").textContent = "";
+}
+
+$("amount").addEventListener("keydown", e => {
+  if (e.key === "Enter") deposit();
+});
+
+render();
+</script>
+</body>
+</html>
